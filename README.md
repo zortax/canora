@@ -1,9 +1,11 @@
 # canora
 
 A small, fast Spotify client. It plays audio itself through librespot and reads the library
-through the Web API. The interface is built on [zgui](https://github.com/zortax/zgui).
-
+through the Web API. The interface is built on [zgui](https://github.com/zortax/zgui). 
 Spotify Premium is necessary.
+
+<img width="1960" height="1314" alt="canora" src="https://github.com/user-attachments/assets/87b7c27b-dc8e-499c-ab31-61797e416489" />
+
 
 ## Build and run
 
