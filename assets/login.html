@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>canora</title>
+<style>
+  :root {
+    --bg: #fbfbfc;
+    --card: #ffffff;
+    --ink: #1b1c1f;
+    --dim: #6d7078;
+    --line: rgba(0, 0, 0, 0.08);
+    --good: #1db954;
+    --bad: #d9455f;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #121316;
+      --card: #191a1e;
+      --ink: #ecedef;
+      --dim: #91949c;
+      --line: rgba(255, 255, 255, 0.08);
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);
+    color: var(--ink);
+    font: 14px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  main {
+    width: 320px;
+    padding: 28px 26px;
+    text-align: center;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+  }
+  .mark {
+    width: 40px;
+    height: 40px;
+    margin: 0 auto 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: color-mix(in oklab, var(--tone) 16%, transparent);
+    color: var(--tone);
+  }
+  .mark svg { width: 22px; height: 22px; }
+  h1 { margin: 0 0 6px; font-size: 16px; font-weight: 600; }
+  p { margin: 0; color: var(--dim); }
+  .note { margin-top: 16px; font-size: 12px; color: var(--dim); }
+  main { --tone: var(--good); }
+  main.bad { --tone: var(--bad); }
+</style>
+</head>
+<body>
+<main id="card">
+  <div class="mark" id="mark"></div>
+  <h1 id="title">Signed in</h1>
+  <p id="detail">canora has what it needs.</p>
+  <p class="note" id="note"></p>
+</main>
+<script>
+  var TICK = "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><path d='M20 6 9 17l-5-5'/></svg>";
+  var CROSS = "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><path d='M18 6 6 18M6 6l12 12'/></svg>";
+
+  var query = new URLSearchParams(window.location.search);
+  var failure = query.get("error");
+  var card = document.getElementById("card");
+  var mark = document.getElementById("mark");
+  var title = document.getElementById("title");
+  var detail = document.getElementById("detail");
+  var note = document.getElementById("note");
+
+  if (failure) {
+    card.className = "bad";
+    mark.innerHTML = CROSS;
+    title.textContent = "Login failed";
+    var said = failure.replace(/_/g, " ");
+    detail.textContent = said.charAt(0).toUpperCase() + said.slice(1) + ". Try again from canora.";
+  } else {
+    mark.innerHTML = TICK;
+  }
+
+  // Only a window a script opened will close on request. Say so when the browser refuses.
+  var left = 4;
+  function tick() {
+    note.textContent = "Closing in " + left + "…";
+    if (left <= 0) {
+      window.close();
+      note.textContent = "You can close this tab.";
+      return;
+    }
+    left -= 1;
+    window.setTimeout(tick, 1000);
+  }
+  tick();
+</script>
+</body>
+</html>

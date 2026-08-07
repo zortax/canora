@@ -1,0 +1,3 @@
+/target
+# Holds the Spotify client identifier. The build compiles it in.
+.env

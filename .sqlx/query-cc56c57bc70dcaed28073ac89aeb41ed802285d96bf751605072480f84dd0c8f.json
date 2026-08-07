@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO account (only_row, id, display_name, product, images)\n             VALUES (1, ?, ?, ?, ?)\n             ON CONFLICT(only_row) DO UPDATE SET\n                 id = excluded.id,\n                 display_name = excluded.display_name,\n                 product = excluded.product,\n                 images = excluded.images",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": []
+  },
+  "hash": "cc56c57bc70dcaed28073ac89aeb41ed802285d96bf751605072480f84dd0c8f"
+}

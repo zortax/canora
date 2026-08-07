@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "DELETE FROM library_entry",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": []
+  },
+  "hash": "1e6b9ad6b71e2a7e438a3cc123e1ddb9b2dc3fb60c6e7420190f0b3f35d99489"
+}

@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO synced (what, at) VALUES (?, ?)\n             ON CONFLICT(what) DO UPDATE SET at = excluded.at",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "c474d47ea847f1805a26dd27ce8bd9472ab7e2c99115b2cd58c741abb3a869a6"
+}

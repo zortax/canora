@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO saved_track (track_id) VALUES (?) ON CONFLICT DO NOTHING",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "04e24a1c0d1a5ccc9bd4950703d44ebdb6a553207db5033708f9453002019f61"
+}

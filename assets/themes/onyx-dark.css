@@ -1,0 +1,31 @@
+/* Onyx, for a dark surface.
+
+   Black under the panel, near-black under the page, and one green for everything the interface
+   points at. The greys carry no chroma at all: the green is the only colour in the window, which
+   is what makes it read as loudly as it does at so small a size. */
+
+--zui-color-primary: oklch(0.723 0.192 146);
+--zui-color-primary-foreground: oklch(0.16 0 0);
+--zui-color-accent: oklch(0.26 0 0);
+--zui-color-accent-foreground: oklch(0.96 0 0);
+--zui-color-secondary: oklch(0.26 0 0);
+--zui-color-secondary-foreground: oklch(0.96 0 0);
+--zui-color-ring: oklch(0.723 0.192 146);
+
+--zui-color-background: oklch(0.178 0 0);
+--zui-color-card: oklch(0.178 0 0);
+--zui-color-popover: oklch(0.235 0 0);
+
+/* The panel is the black one. */
+--zui-color-sidebar: oklch(0.06 0 0);
+--zui-color-sidebar-primary: oklch(0.723 0.192 146);
+--zui-color-sidebar-primary-foreground: oklch(0.16 0 0);
+--zui-color-sidebar-accent: oklch(0.24 0 0);
+--zui-color-sidebar-accent-foreground: oklch(0.96 0 0);
+--zui-color-sidebar-border: oklch(1 0 0 / 8%);
+--zui-color-sidebar-ring: oklch(0.723 0.192 146);
+
+--zui-color-border: oklch(1 0 0 / 8%);
+--zui-color-input: oklch(1 0 0 / 10%);
+--zui-color-muted: oklch(0.25 0 0);
+--zui-color-muted-foreground: oklch(0.70 0 0);

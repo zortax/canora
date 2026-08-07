@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "DELETE FROM saved_track",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": []
+  },
+  "hash": "8731d53b19361d1f9eb978902dc5231e4d0599fc6b865f362f49d93ea3656950"
+}

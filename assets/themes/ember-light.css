@@ -1,0 +1,29 @@
+/* Ember, for a light surface.
+
+   A card takes the colour of the page: this interface separates by space and by tone, and draws a
+   line only where two areas meet. */
+
+--zui-color-primary: oklch(0.55 0.16 45);
+--zui-color-primary-foreground: oklch(0.99 0.01 45);
+--zui-color-accent: oklch(0.95 0.03 55);
+--zui-color-accent-foreground: oklch(0.42 0.10 40);
+--zui-color-secondary: oklch(0.95 0.03 55);
+--zui-color-secondary-foreground: oklch(0.42 0.10 40);
+--zui-color-ring: oklch(0.64 0.14 45);
+
+--zui-color-background: oklch(0.985 0.006 60);
+--zui-color-card: oklch(0.985 0.006 60);
+--zui-color-popover: oklch(1 0 0);
+
+--zui-color-sidebar: oklch(0.968 0.010 60);
+--zui-color-sidebar-primary: oklch(0.55 0.16 45);
+--zui-color-sidebar-primary-foreground: oklch(0.99 0.01 45);
+--zui-color-sidebar-accent: oklch(0.95 0.03 55);
+--zui-color-sidebar-accent-foreground: oklch(0.42 0.10 40);
+--zui-color-sidebar-border: oklch(0.35 0.05 50 / 10%);
+--zui-color-sidebar-ring: oklch(0.64 0.14 45);
+
+--zui-color-border: oklch(0.35 0.05 50 / 10%);
+--zui-color-input: oklch(0.35 0.05 50 / 10%);
+--zui-color-muted: oklch(0.945 0.012 60);
+--zui-color-muted-foreground: oklch(0.52 0.03 50);

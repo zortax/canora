@@ -1,0 +1,29 @@
+/* Slate, for a dark surface.
+
+   A card takes the colour of the page: this interface separates by space and by tone, and draws a
+   line only where two areas meet. */
+
+--zui-color-primary: oklch(0.92 0.005 260);
+--zui-color-primary-foreground: oklch(0.20 0.01 260);
+--zui-color-accent: oklch(0.27 0.01 260);
+--zui-color-accent-foreground: oklch(0.93 0.005 260);
+--zui-color-secondary: oklch(0.27 0.01 260);
+--zui-color-secondary-foreground: oklch(0.93 0.005 260);
+--zui-color-ring: oklch(0.60 0.02 260);
+
+--zui-color-background: oklch(0.185 0.008 260);
+--zui-color-card: oklch(0.185 0.008 260);
+--zui-color-popover: oklch(0.23 0.01 260);
+
+--zui-color-sidebar: oklch(0.165 0.008 260);
+--zui-color-sidebar-primary: oklch(0.92 0.005 260);
+--zui-color-sidebar-primary-foreground: oklch(0.20 0.01 260);
+--zui-color-sidebar-accent: oklch(0.27 0.01 260);
+--zui-color-sidebar-accent-foreground: oklch(0.93 0.005 260);
+--zui-color-sidebar-border: oklch(1 0 0 / 8%);
+--zui-color-sidebar-ring: oklch(0.60 0.02 260);
+
+--zui-color-border: oklch(1 0 0 / 8%);
+--zui-color-input: oklch(1 0 0 / 8%);
+--zui-color-muted: oklch(0.25 0.01 260);
+--zui-color-muted-foreground: oklch(0.68 0.01 260);

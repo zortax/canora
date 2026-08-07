@@ -1,0 +1,29 @@
+/* Graphite, for a light surface.
+
+   Grey with the blue taken out: the hue sits near the warm end of neutral, so nothing in the
+   window reads as tinted. A card takes the colour of the page. */
+
+--zui-color-primary: oklch(0.34 0.004 80);
+--zui-color-primary-foreground: oklch(0.99 0 0);
+--zui-color-accent: oklch(0.945 0.003 80);
+--zui-color-accent-foreground: oklch(0.32 0.004 80);
+--zui-color-secondary: oklch(0.945 0.003 80);
+--zui-color-secondary-foreground: oklch(0.32 0.004 80);
+--zui-color-ring: oklch(0.56 0.006 80);
+
+--zui-color-background: oklch(0.985 0.002 80);
+--zui-color-card: oklch(0.985 0.002 80);
+--zui-color-popover: oklch(1 0 0);
+
+--zui-color-sidebar: oklch(0.966 0.003 80);
+--zui-color-sidebar-primary: oklch(0.34 0.004 80);
+--zui-color-sidebar-primary-foreground: oklch(0.99 0 0);
+--zui-color-sidebar-accent: oklch(0.945 0.003 80);
+--zui-color-sidebar-accent-foreground: oklch(0.32 0.004 80);
+--zui-color-sidebar-border: oklch(0 0 0 / 9%);
+--zui-color-sidebar-ring: oklch(0.56 0.006 80);
+
+--zui-color-border: oklch(0 0 0 / 9%);
+--zui-color-input: oklch(0 0 0 / 9%);
+--zui-color-muted: oklch(0.942 0.003 80);
+--zui-color-muted-foreground: oklch(0.52 0.005 80);

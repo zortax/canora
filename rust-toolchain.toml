@@ -1,0 +1,6 @@
+# The interface framework pins this toolchain. Use the same one, or the style engine does not
+# compile. See ../zgui/rust-toolchain.toml.
+[toolchain]
+channel = "nightly-2026-04-16"
+components = ["rustfmt", "clippy"]
+profile = "minimal"

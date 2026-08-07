@@ -1,0 +1,62 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT kind, id, name, folder_id FROM library_entry ORDER BY position",
+  "describe": {
+    "columns": [
+      {
+        "name": "kind",
+        "ordinal": 0,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "library_entry",
+            "name": "kind"
+          }
+        }
+      },
+      {
+        "name": "id",
+        "ordinal": 1,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "library_entry",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "name": "name",
+        "ordinal": 2,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "library_entry",
+            "name": "name"
+          }
+        }
+      },
+      {
+        "name": "folder_id",
+        "ordinal": 3,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "library_entry",
+            "name": "folder_id"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "656bd68cc11717df3270ce0081d1cf6252b6eebf01dec482f630ebb6f68f3e36"
+}

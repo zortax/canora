@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO library_entry (position, kind, id, name, folder_id)\n                             VALUES (?, 'folder', ?, ?, NULL)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "e32821c6c69ee55425a44789b03e8aad0c68021818d9aa5e8d9884ba77b379d4"
+}

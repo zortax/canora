@@ -1,0 +1,29 @@
+/* Onyx, for a light surface.
+
+   The same one green, taken down until it holds its own against a white page, over greys that
+   carry no chroma. */
+
+--zui-color-primary: oklch(0.55 0.16 146);
+--zui-color-primary-foreground: oklch(0.99 0 0);
+--zui-color-accent: oklch(0.945 0 0);
+--zui-color-accent-foreground: oklch(0.40 0.10 146);
+--zui-color-secondary: oklch(0.945 0 0);
+--zui-color-secondary-foreground: oklch(0.40 0.10 146);
+--zui-color-ring: oklch(0.55 0.16 146);
+
+--zui-color-background: oklch(0.985 0 0);
+--zui-color-card: oklch(0.985 0 0);
+--zui-color-popover: oklch(1 0 0);
+
+--zui-color-sidebar: oklch(0.955 0 0);
+--zui-color-sidebar-primary: oklch(0.55 0.16 146);
+--zui-color-sidebar-primary-foreground: oklch(0.99 0 0);
+--zui-color-sidebar-accent: oklch(0.93 0 0);
+--zui-color-sidebar-accent-foreground: oklch(0.40 0.10 146);
+--zui-color-sidebar-border: oklch(0 0 0 / 10%);
+--zui-color-sidebar-ring: oklch(0.55 0.16 146);
+
+--zui-color-border: oklch(0 0 0 / 9%);
+--zui-color-input: oklch(0 0 0 / 12%);
+--zui-color-muted: oklch(0.945 0 0);
+--zui-color-muted-foreground: oklch(0.50 0 0);

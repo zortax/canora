@@ -1,0 +1,26 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT at FROM synced WHERE what = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "at",
+        "ordinal": 0,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "synced",
+            "name": "at"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "b0b5aa267ebbfa69e89e4991ad4c615d03077fe77894e5900980cb8e1a69974b"
+}

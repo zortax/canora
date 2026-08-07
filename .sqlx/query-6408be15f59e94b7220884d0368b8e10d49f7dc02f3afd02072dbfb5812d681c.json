@@ -1,0 +1,110 @@
+{
+  "db_name": "SQLite",
+  "query": "\n            SELECT id, name, description, kind, owner_name, total_tracks, snapshot_id, images\n            FROM playlist\n            ORDER BY position\n            ",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "playlist",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "name": "name",
+        "ordinal": 1,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "playlist",
+            "name": "name"
+          }
+        }
+      },
+      {
+        "name": "description",
+        "ordinal": 2,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "playlist",
+            "name": "description"
+          }
+        }
+      },
+      {
+        "name": "kind",
+        "ordinal": 3,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "playlist",
+            "name": "kind"
+          }
+        }
+      },
+      {
+        "name": "owner_name",
+        "ordinal": 4,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "playlist",
+            "name": "owner_name"
+          }
+        }
+      },
+      {
+        "name": "total_tracks",
+        "ordinal": 5,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "playlist",
+            "name": "total_tracks"
+          }
+        }
+      },
+      {
+        "name": "snapshot_id",
+        "ordinal": 6,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "playlist",
+            "name": "snapshot_id"
+          }
+        }
+      },
+      {
+        "name": "images",
+        "ordinal": 7,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "playlist",
+            "name": "images"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "6408be15f59e94b7220884d0368b8e10d49f7dc02f3afd02072dbfb5812d681c"
+}

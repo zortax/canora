@@ -1,0 +1,62 @@
+[package]
+name = "canora"
+version = "0.1.0"
+edition = "2024"
+authors = ["Leonard Seibold <git@zrtx.de>"]
+license = "Apache-2.0"
+
+[dependencies]
+# UI
+zgui = { git = "https://github.com/zortax/zgui", features = ["tokio"] }
+zgui-ui = { git = "https://github.com/zortax/zgui" }
+zgui-ui-tokens = { git = "https://github.com/zortax/zgui" }
+zgui-image = { git = "https://github.com/zortax/zgui" }
+
+# Spotify
+librespot-core = "0.8"
+librespot-playback = { version = "0.8", default-features = false, features = [
+    "pulseaudio-backend",
+] }
+librespot-oauth = "0.8"
+http = "1"
+librespot-protocol = "0.8"
+protobuf = "3"
+
+# Async
+tokio = { version = "1", features = [
+    "rt-multi-thread",
+    "macros",
+    "sync",
+    "time",
+    "fs",
+] }
+futures-util = { version = "0.3", default-features = false, features = ["std"] }
+reqwest = { version = "0.13", default-features = false, features = [
+    "json",
+    "query",
+    "rustls",
+    "gzip",
+] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+anyhow = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+dirs = "6"
+sqlx = { version = "0.9", default-features = false, features = [
+    "runtime-tokio",
+    "sqlite",
+    "macros",
+    "migrate",
+] }
+rand = "0.10"
+mpris-server = "0.10"
+
+[profile.dev]
+# The framework and the audio pipeline are both slow when unoptimised. Build the dependencies
+# with optimisation and keep the application itself quick to rebuild.
+opt-level = 0
+
+[profile.dev.package."*"]
+opt-level = 2

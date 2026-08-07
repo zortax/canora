@@ -1,0 +1,695 @@
+:root {
+        /* The library ships 4px. Three tightens every component at once. */
+        --zui-space-base: 3px;
+        /* Round, and tighter than the 10px the library ships. */
+        --zui-radius-base: 8px;
+        /* Flat: nothing on the page carries elevation. Keep the lift for what floats over it. */
+        --zui-shadow-xs: none;
+        --zui-shadow-sm: none;
+        --zui-shadow-md: 0 4px 16px oklch(0 0 0 / 12%);
+        --zui-sidebar-width: 208px;
+
+        /* What this application measures itself by. */
+        --row: 34px;
+        --bar: 62px;
+        /* How far the floating bar stands off the window's edges. */
+        --bar-gap: 10px;
+        /* How tall the strip across the top is, and how wide a window edge is to grab. */
+        --top: 40px;
+        --search-h: 22px;
+        --grab: 6px;
+        /* What the bar is tinted with. The page shows through it. */
+        --bar-tint: oklch(from var(--zui-color-background) l c h / 72%);
+        --side: 210px;
+        --hero: 132px;
+
+        background-color: var(--zui-color-background);
+        color: var(--zui-color-foreground);
+        font-family: sans-serif;
+        font-size: var(--zui-type-size-sm);
+        overflow: hidden;
+    }
+
+    /* An icon is a document with no size of its own. Every one is measured here. */
+    .icon-xs { width: 12px; height: 12px; }
+    .icon-sm { width: 14px; height: 14px; }
+    .icon-md { width: 16px; height: 16px; }
+    .icon-lg { width: 22px; height: 22px; }
+
+    /* -- the window ------------------------------------------------------------------------ */
+
+    /* Every box that holds a list takes a share of what is left rather than growing to fit its
+       content. A basis of `auto` measures the content first, and a long list then pushes the box
+       past the window, which hides its last rows under the bar. */
+    .app { width: 100%; height: 100%; }
+    .app__body { width: 100%; height: 100%; min-height: 0; }
+    .app__main { flex: 1 1 0; min-width: 0; min-height: 0; }
+    .app__view { flex: 1 1 0; min-height: 0; overflow: hidden; }
+
+    /* -- what the window shows while it connects ------------------------------------------- */
+
+    .gate {
+        width: 100%;
+        height: 100%;
+        align-items: center;
+        justify-content: center;
+        gap: var(--zui-space-sm);
+        color: var(--zui-color-muted-foreground);
+    }
+    .gate__name {
+        font-size: var(--zui-type-size-xl);
+        font-weight: 600;
+        color: var(--zui-color-foreground);
+    }
+    .gate__note { font-size: var(--zui-type-size-sm); }
+
+    /* -- the panel on the left -------------------------------------------------------------- */
+
+    .side {
+        width: var(--side);
+        flex: 0 0 auto;
+        min-height: 0;
+        background-color: var(--zui-color-sidebar);
+        padding: var(--zui-space-sm);
+        gap: var(--zui-space-md);
+    }
+    /* As tall as the strip across the top, so the two halves of the window's handle line up. */
+    .side__brand {
+        align-items: center;
+        gap: var(--zui-space-sm);
+        height: var(--top);
+        padding: 0 var(--zui-space-sm);
+        flex: 0 0 auto;
+    }
+    .side__logo {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 auto;
+        color: var(--zui-color-primary);
+    }
+    .side__name { font-size: var(--zui-type-size-md); font-weight: 600; letter-spacing: 0.01em; }
+    .side__group { gap: 2px; min-height: 0; }
+    .side__group-grow { flex: 1 1 auto; }
+    .side__label {
+        font-size: var(--zui-type-size-xs);
+        color: var(--zui-color-muted-foreground);
+        padding: 0 var(--zui-space-sm);
+        margin-bottom: 2px;
+    }
+    .side__head { align-items: center; }
+    .side__grow { flex: 1 1 auto; }
+    .side__add {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 20px;
+        height: 20px;
+        border-radius: var(--zui-radius-sm);
+        color: var(--zui-color-muted-foreground);
+    }
+    .side__add:hover { background-color: var(--zui-color-accent); }
+    .side__list { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+    .side__items { gap: 1px; }
+    .side__item {
+        overflow: hidden;
+        height: 26px;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: var(--zui-space-sm);
+        padding: 0 var(--zui-space-sm);
+        border-radius: var(--zui-radius-sm);
+        color: var(--zui-color-muted-foreground);
+    }
+    .side__item:hover { background-color: var(--zui-color-accent); }
+    .side__item-on {
+        background-color: var(--zui-color-accent);
+        color: var(--zui-color-foreground);
+        font-weight: 500;
+    }
+    /* One line per row. The style engine cuts nothing, so the text is cut in Rust and this
+       stops a long name from wrapping into the row below it. */
+    .side__text { flex: 1 1 auto; min-width: 0; text-wrap-mode: nowrap; }
+    .side__count { font-size: var(--zui-type-size-xs); color: var(--zui-color-muted-foreground); }
+    /* A cover says which playlist a row is faster than its name does, and a picture costs the
+       rasteriser nothing: it is a texture rather than a drawing. */
+    .side__art {
+        width: 20px;
+        height: 20px;
+        flex: 0 0 auto;
+        border-radius: 3px;
+        background-color: var(--zui-color-muted);
+    }
+    /* Saved tracks have no cover, so they carry a mark on the accent instead. */
+    .side__art-liked {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: var(--zui-color-primary);
+        color: var(--zui-color-primary-foreground);
+    }
+    /* A folder, and the rows it holds when it is open. */
+    .side__folder { color: var(--zui-color-muted-foreground); }
+    .side__twist {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 20px;
+        height: 20px;
+        flex: 0 0 auto;
+    }
+    /* The strip the rows slide out of. Its height is set from Rust as the folder opens, and it
+       cuts whatever has not arrived yet. The style engine reads no transition off a sheet, so
+       every moving value here comes from a timer. */
+    .side__inside { overflow: hidden; flex: 0 0 auto; }
+    .side__rows { gap: 1px; }
+    .side__item-in { padding-left: var(--zui-space-lg); }
+
+    .side__foot {
+        align-items: center;
+        gap: var(--zui-space-sm);
+        padding-top: var(--zui-space-sm);
+    }
+    .side__who {
+        flex: 1 1 auto;
+        min-width: 0;
+        text-wrap-mode: nowrap;
+        font-size: var(--zui-type-size-xs);
+        color: var(--zui-color-muted-foreground);
+    }
+
+    /* -- the strip above the main area ------------------------------------------------------ */
+
+    /* The strip across the top is the window's handle. It looks like part of the page: no line
+       under it, no tone of its own. */
+    .top {
+        align-items: center;
+        gap: var(--zui-space-sm);
+        padding: var(--zui-space-xs) var(--zui-space-sm) var(--zui-space-xs) var(--zui-space-md);
+        height: var(--top);
+        flex: 0 0 auto;
+    }
+    .top__nav { align-items: center; gap: var(--zui-space-xs); }
+    .top__gap { flex: 1 1 auto; height: 100%; }
+    .top__end { align-items: center; gap: 2px; }
+    .top__search { width: 200px; margin-left: var(--zui-space-sm); }
+    /* A short field holds its text in the middle by leading rather than by padding: every piece
+       of the strip is one line tall, and that line is the whole height of the strip. The default
+       field pads four pixels above and below a line already taller than what is left. */
+    .top__search .zui-input-group {
+        min-height: var(--search-h);
+        flex-wrap: nowrap;
+        gap: var(--zui-space-sm);
+        padding: 0 var(--zui-space-sm);
+    }
+    .top__search .zui-field {
+        height: var(--search-h);
+        min-height: var(--search-h);
+        padding: 0;
+        font-size: var(--zui-type-size-xs);
+        line-height: var(--search-h);
+    }
+    .top__search .zui-field:empty::before {
+        left: 0;
+        right: 0;
+        font-size: var(--zui-type-size-xs);
+        line-height: var(--search-h);
+    }
+    .top__search .zui-input-group__addon {
+        height: var(--search-h);
+        padding: 0;
+        line-height: var(--search-h);
+    }
+    .top__search .zui-input-group__addon[data-align="inline-start"] { padding-left: 0; }
+    .top__who { font-size: var(--zui-type-size-xs); }
+    /* The box the sync mark turns inside. It is square, so the turn has a centre. */
+    .top__spin {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 14px;
+        height: 14px;
+    }
+
+    /* A field that is being typed into needs no ring: the caret says so, and the ring is the
+       loudest thing in a quiet header. */
+    .top__search .zui-input-group { --zui-shadow-xs: none; }
+    .top__search .zui-input-group:focus-within {
+        outline: none;
+        box-shadow: none;
+        border-color: var(--zui-color-border);
+    }
+    .top__search .zui-field:focus-visible { outline: none; box-shadow: none; }
+
+    /* Minimise, maximise, close. */
+    .wctl { align-items: center; gap: 2px; margin-left: var(--zui-space-xs); }
+    .wctl__key {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 26px;
+        height: 26px;
+        border-radius: var(--zui-radius-sm);
+        color: var(--zui-color-muted-foreground);
+    }
+    .wctl__key:hover { background-color: var(--zui-color-accent); color: var(--zui-color-foreground); }
+    .wctl__key-close:hover { background-color: oklch(0.55 0.20 25); color: oklch(0.99 0 0); }
+
+    /* The strips the desktop resizes the window by. The frame that holds them covers the whole
+       window, so it must let every press through; only the strips themselves take one. */
+    .edges { position: absolute; inset: 0; pointer-events: none; }
+    .edge { position: absolute; pointer-events: auto; }
+    .edge-n { top: 0; left: var(--grab); right: var(--grab); height: var(--grab); }
+    .edge-s { bottom: 0; left: var(--grab); right: var(--grab); height: var(--grab); }
+    .edge-w { left: 0; top: var(--grab); bottom: var(--grab); width: var(--grab); }
+    .edge-e { right: 0; top: var(--grab); bottom: var(--grab); width: var(--grab); }
+    .edge-nw { top: 0; left: 0; width: var(--grab); height: var(--grab); }
+    .edge-ne { top: 0; right: 0; width: var(--grab); height: var(--grab); }
+    .edge-sw { bottom: 0; left: 0; width: var(--grab); height: var(--grab); }
+    .edge-se { bottom: 0; right: 0; width: var(--grab); height: var(--grab); }
+
+    /* -- a view ----------------------------------------------------------------------------- */
+
+    .view { height: 100%; min-height: 0; gap: var(--zui-space-sm); }
+    /* The list stays built while its pages arrive. The stand-in sits above it and empties. */
+    .view__wait { flex: 0 0 auto; }
+    .view__list { flex: 1 1 0; min-height: 0; display: flex; }
+    .view-pad { padding: 0 var(--zui-space-md) var(--zui-space-md); }
+
+    .hdr {
+        gap: var(--zui-space-lg);
+        padding: var(--zui-space-sm) var(--zui-space-md) var(--zui-space-md);
+        align-items: flex-end;
+        flex: 0 0 auto;
+    }
+    .hdr__meta { gap: 2px; flex: 1 1 auto; min-width: 0; justify-content: flex-end; }
+    .hdr__kind {
+        font-size: var(--zui-type-size-xs);
+        color: var(--zui-color-muted-foreground);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+    }
+    .hdr__title { font-size: 28px; font-weight: 700; line-height: 1.15; text-wrap-mode: nowrap; }
+    .hdr__sub { font-size: var(--zui-type-size-sm); color: var(--zui-color-muted-foreground); }
+    .hdr__acts {
+        align-items: center;
+        gap: var(--zui-space-sm);
+        margin-top: var(--zui-space-sm);
+        width: 100%;
+    }
+    .hdr__spacer { flex: 1 1 auto; }
+    .hdr__now { font-size: var(--zui-type-size-xs); color: var(--zui-color-muted-foreground); }
+
+    .sect { gap: var(--zui-space-sm); padding: 0 var(--zui-space-md); flex: 1 1 0; min-height: 0; }
+    .sect__label {
+        font-size: var(--zui-type-size-md);
+        font-weight: 600;
+        margin-top: var(--zui-space-sm);
+    }
+    .sect__top { height: 240px; }
+
+    /* -- pictures ---------------------------------------------------------------------------- */
+
+    .art {
+        flex: 0 0 auto;
+        overflow: hidden;
+        border-radius: var(--zui-radius-sm);
+        background-color: var(--zui-color-muted);
+    }
+    .art__image { width: 100%; height: 100%; }
+    /* What stands in for a cover that is not there. */
+    .art__none {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--zui-color-muted-foreground);
+    }
+    .art-sm { width: 32px; height: 32px; }
+    .art-bar { width: 44px; height: 44px; }
+    .art-card { width: 100%; aspect-ratio: 1; }
+    .art-hero {
+        width: var(--hero);
+        height: var(--hero);
+        border-radius: var(--zui-radius-md);
+    }
+    .art-round { border-radius: 50%; }
+    /* The saved tracks have no cover, so they carry the same mark the sidebar gives them. */
+    .art-hearted {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: var(--zui-color-primary);
+        color: var(--zui-color-primary-foreground);
+    }
+
+    /* -- a grid of covers -------------------------------------------------------------------- */
+
+    /* A `scroll` rather than a `box`: only a scroll element scrolls, and a plain box with
+       `overflow-y: auto` cut its last rows off instead. */
+    .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+        /* Rows take the height their cards need. Left to `auto` they share out whatever the box
+           has, so a grid with more rows than fit squashes every cover into a strip rather than
+           running past the bottom for the scroller to carry. */
+        grid-auto-rows: min-content;
+        gap: var(--zui-space-md);
+        padding: var(--zui-space-sm) 0 var(--zui-space-lg);
+        overflow-y: auto;
+        align-content: start;
+        /* A grid in a column needs a share of the height, or it settles at nothing. */
+        flex: 1 1 0;
+        min-height: 0;
+    }
+    .card {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        padding: var(--zui-space-sm);
+        border-radius: var(--zui-radius-md);
+        min-width: 0;
+        overflow: hidden;
+    }
+    .card:hover { background-color: var(--zui-color-accent); }
+    .card__title { font-size: var(--zui-type-size-sm); font-weight: 500; text-wrap-mode: nowrap; }
+    .card__note { font-size: var(--zui-type-size-xs); color: var(--zui-color-muted-foreground); }
+
+    /* -- a list of tracks -------------------------------------------------------------------- */
+
+    /* Room under the last row for the bar to float over. Without it the list ends where the
+       panel begins and its final rows can never be read. */
+    /* The padding is on the rows rather than the list, so the scrollbar the engine paints sits
+       against the window's edge instead of floating a gutter away from it. */
+    .list {
+        flex: 1 1 0;
+        min-height: 0;
+        padding-bottom: calc(var(--bar) + var(--bar-gap) * 2);
+    }
+    .list .trk { margin: 0 var(--zui-space-md); }
+    .grid { padding-bottom: calc(var(--bar) + var(--bar-gap) * 2); }
+
+    /* The last column is a fixed width, so every duration lines up. The actions sit in a
+       column of their own rather than between the title and the time, which is what used to
+       shift the duration left until the pointer arrived. */
+    .trk {
+        display: grid;
+        grid-template-columns: 34px 1fr 26px 46px;
+        align-items: center;
+        gap: var(--zui-space-sm);
+        height: var(--row);
+        padding: 0 var(--zui-space-sm);
+        border-radius: var(--zui-radius-sm);
+        overflow: hidden;
+        color: var(--zui-color-muted-foreground);
+    }
+    .trk:hover { background-color: var(--zui-color-accent); }
+    .trk-off { opacity: 0.45; }
+
+    /* The cover, with the number over it. The number gives way to a dot on the track that
+       plays, and to the cover alone under the pointer. */
+    .trk__lead {
+        position: relative;
+        width: 26px;
+        height: 26px;
+        flex: 0 0 auto;
+    }
+    .art-row { width: 26px; height: 26px; border-radius: 3px; }
+    .trk__mark {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 26px;
+        height: 26px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 3px;
+    }
+    /* Over a cover, the mark only darkens what is under the dot. */
+    .trk-on .trk__mark-over { background-color: oklch(0 0 0 / 55%); }
+    .trk-on .trk__mark-over .trk__sign { color: oklch(0.99 0 0); }
+    .trk__num { font-size: var(--zui-type-size-xs); }
+    /* Only the track that plays carries this, so the list plans one extra drawing rather than
+       one per row. */
+    .trk__sign {
+        display: none;
+        align-items: center;
+        justify-content: center;
+        color: var(--zui-color-primary);
+    }
+    .trk-on .trk__sign { display: flex; }
+    .trk-on .trk__num { display: none; }
+    .trk-on .trk__title { color: var(--zui-color-primary); }
+
+    /* The two lines sit level with the cover: equal air above the title and below the artist. */
+    /* The pair sits level with the cover. The block takes the row's whole height and centres the
+       two lines inside it, so what decides the middle is the row rather than whatever the line
+       boxes happen to measure. */
+    .trk__main {
+        min-width: 0;
+        gap: 0;
+        height: 100%;
+        justify-content: center;
+        align-items: flex-start;
+    }
+    /* A link is a control, and a control fills its line. This keeps it to its words, so a press
+       beside the name is a press on the row. */
+    .trk__link {
+        align-self: flex-start;
+        max-width: 100%;
+    }
+    .trk__title {
+        font-size: var(--zui-type-size-sm);
+        color: var(--zui-color-foreground);
+        line-height: 1.15;
+        text-wrap-mode: nowrap;
+    }
+    .trk__artist {
+        font-size: var(--zui-type-size-xs);
+        line-height: 1.15;
+        text-wrap-mode: nowrap;
+        color: var(--zui-color-muted-foreground);
+    }
+    .trk__link:hover { text-decoration: underline; color: var(--zui-color-foreground); }
+
+    /* A saved track keeps its heart. An unsaved one shows an open heart under the pointer, so a
+       list of unsaved tracks plans no drawings it does not need. */
+    /* Both columns are named rather than counted. A hidden heart leaves the flow, and the
+       duration would take the column the heart had left: every unsaved row read a column to the
+       left of every saved one. */
+    .trk__acts {
+        display: none;
+        grid-column-start: 3;
+        align-items: center;
+        justify-content: center;
+    }
+    .trk:hover .trk__acts { display: flex; }
+    .trk-liked .trk__acts { display: flex; }
+    .trk-liked .trk__like { color: var(--zui-color-primary); }
+
+    .trk__time {
+        grid-column-start: 4;
+        font-size: var(--zui-type-size-xs);
+        text-align: right;
+    }
+
+    /* -- rows that stand in for a list that has not arrived ---------------------------------- */
+
+    .wait { gap: var(--zui-space-sm); padding: var(--zui-space-sm) var(--zui-space-md); }
+    .wait__row { height: 22px; width: 100%; border-radius: var(--zui-radius-sm); }
+
+    /* -- the bar under everything ------------------------------------------------------------ */
+
+    /* The bar floats clear of the window's edges and the page runs behind it. Frosted rather
+       than solid: what is behind stays legible as a texture, which is what tells a reader the
+       list carries on under it. */
+    .bar {
+        position: absolute;
+        left: var(--bar-gap);
+        right: var(--bar-gap);
+        bottom: var(--bar-gap);
+        height: var(--bar);
+        align-items: center;
+        gap: var(--zui-space-md);
+        padding: 0 var(--zui-space-md);
+        border-radius: var(--zui-radius-lg);
+        border: 1px solid var(--zui-color-border);
+        background-color: var(--bar-tint);
+        backdrop-filter: blur(18px);
+        box-shadow: var(--zui-shadow-md);
+    }
+
+    /* The two blocks either side of the transport take equal shares of what the middle leaves, so
+       the play button sits on the centre line of the bar whatever is in them — including nothing,
+       which is what a window with no track shows.
+       Their contents keep their own widths: the block is a share of the bar, and the heart still
+       follows the words rather than standing at a set distance from them. */
+    .bar__now {
+        flex: 1 1 0;
+        min-width: 0;
+        align-items: center;
+        gap: var(--zui-space-sm);
+    }
+    .bar__meta {
+        flex: 0 1 auto;
+        min-width: 0;
+        gap: 0;
+        height: 100%;
+        justify-content: center;
+        align-items: flex-start;
+        overflow: hidden;
+    }
+    .bar__title { font-size: var(--zui-type-size-sm); line-height: 1.15; text-wrap-mode: nowrap; }
+    .bar__title:hover { text-decoration: underline; }
+    .bar__artist {
+        font-size: var(--zui-type-size-xs);
+        color: var(--zui-color-muted-foreground);
+        line-height: 1.2;
+        text-wrap-mode: nowrap;
+    }
+    .bar__artist:hover { text-decoration: underline; }
+    .bar__like { flex: 0 0 auto; }
+
+    /* The two rows share the height evenly. Without this the keys keep their own height and the
+       slack collects under them, which reads as the buttons sitting high. */
+    .bar__mid {
+        /* A width of its own rather than a share, so the two sides are what the bar balances. */
+        flex: 0 1 520px;
+        min-width: 260px;
+        align-items: center;
+        justify-content: center;
+        gap: 0;
+    }
+    .bar__keys { align-items: center; gap: var(--zui-space-xs); flex: 1 1 0; }
+    .bar__seek { flex: 1 1 0; }
+    .bar__play { border-radius: 50%; }
+    .bar__rep { color: var(--zui-color-muted-foreground); }
+    .bar__rep-on { color: var(--zui-color-primary); }
+    .bar__seek {
+        align-items: center;
+        gap: var(--zui-space-sm);
+        width: 100%;
+        max-width: 520px;
+    }
+    .bar__time {
+        font-size: var(--zui-type-size-xs);
+        color: var(--zui-color-muted-foreground);
+        width: 38px;
+        text-align: center;
+    }
+    .bar__right {
+        flex: 1 1 0;
+        min-width: 0;
+        align-items: center;
+        gap: var(--zui-space-sm);
+        justify-content: flex-end;
+    }
+
+    /* A component installs its own sheet the first time it is drawn, which is after this one.
+       Two rules of the same weight are settled by which came last, so these name two classes. */
+    .bar .bar__vol { width: 88px; flex: 0 0 auto; }
+    .bar .bar__bar { flex: 1 1 auto; width: auto; }
+
+    /* A slim bar that grows a handle under the pointer. */
+    .bar .zui-slider { height: 12px; }
+    .bar .zui-slider > .zui-slider__track { height: 4px; }
+    .bar .zui-slider > .zui-slider__thumb { width: 10px; height: 10px; opacity: 0; }
+    .bar .zui-slider:hover > .zui-slider__thumb { opacity: 1; }
+    .bar .zui-slider:focus-within > .zui-slider__thumb { opacity: 1; }
+
+    /* A menu item's icon sits before its words, in the muted tone so the words lead. */
+    .zui-menu-item .icon, .zui-menu-sub-trigger .icon { color: var(--zui-color-muted-foreground); }
+
+    /* -- what plays next --------------------------------------------------------------------- */
+
+    .queue { width: 290px; padding: var(--zui-space-sm); }
+    .queue__body { gap: var(--zui-space-sm); }
+    .queue__group { gap: 2px; min-height: 0; }
+    .queue__label {
+        font-size: var(--zui-type-size-xs);
+        color: var(--zui-color-muted-foreground);
+        padding: 0 var(--zui-space-xs);
+    }
+    .queue__list { max-height: 280px; overflow-y: auto; gap: 1px; }
+    .queue__row {
+        gap: 0;
+        padding: var(--zui-space-xs);
+        border-radius: var(--zui-radius-sm);
+        min-width: 0;
+    }
+    .queue__row:hover { background-color: var(--zui-color-accent); }
+    .queue__row-on .queue__title { color: var(--zui-color-primary); }
+    .queue__title { font-size: var(--zui-type-size-sm); line-height: 1.25; text-wrap-mode: nowrap; }
+    .queue__artist {
+        font-size: var(--zui-type-size-xs);
+        color: var(--zui-color-muted-foreground);
+        line-height: 1.2;
+    }
+    .queue__empty {
+        font-size: var(--zui-type-size-xs);
+        color: var(--zui-color-muted-foreground);
+        padding: var(--zui-space-sm);
+    }
+    /* The screen the window opens on before there is an account. One card, centred, saying what
+       this is and what the button will do. */
+    .hello {
+        width: 100%;
+        height: 100%;
+        align-items: center;
+        justify-content: center;
+        background-color: var(--zui-color-background);
+    }
+    /* The window has no frame of its own, so the welcome screen carries a handle across the top
+       and the controls that go with it. */
+    .hello__bar {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: var(--top);
+        align-items: center;
+        padding: var(--zui-space-xs) var(--zui-space-sm);
+    }
+    .hello__gap { flex: 1 1 auto; height: 100%; }
+    .hello__card {
+        width: 300px;
+        height: 232px;
+        align-items: stretch;
+        text-align: center;
+        padding: var(--zui-space-lg);
+        border: 1px solid var(--zui-color-border);
+        border-radius: var(--zui-radius-lg);
+        background-color: var(--zui-color-card);
+    }
+    /* What the card says takes the room the button leaves, and centres itself in it. */
+    .hello__say {
+        flex: 1 1 auto;
+        align-items: center;
+        justify-content: center;
+        gap: var(--zui-space-sm);
+    }
+    .hello__foot { flex: 0 0 auto; align-items: stretch; gap: var(--zui-space-sm); }
+    .hello__mark {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: var(--zui-color-primary);
+        color: var(--zui-color-primary-foreground);
+        margin-bottom: var(--zui-space-sm);
+    }
+    .hello__name { font-size: var(--zui-type-size-lg); font-weight: 600; }
+    .hello__line { font-size: var(--zui-type-size-sm); color: var(--zui-color-muted-foreground); }
+    .hello__go { width: 100%; }
+    /* What the login is doing, in its own line above the button. */
+    .hello__note {
+        font-size: var(--zui-type-size-xs);
+        color: var(--zui-color-muted-foreground);
+        line-height: 1.35;
+    }
+    .hello__note-bad { color: var(--zui-color-destructive); }

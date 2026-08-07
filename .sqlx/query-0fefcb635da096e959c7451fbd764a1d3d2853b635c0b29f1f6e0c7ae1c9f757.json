@@ -1,0 +1,134 @@
+{
+  "db_name": "SQLite",
+  "query": "\n            SELECT t.id, t.name, t.artists, t.album_id, t.album_name, t.album_images,\n                   t.duration_ms, t.explicit, t.playable, t.track_number\n            FROM playlist_track pt\n            JOIN track t ON t.id = pt.track_id\n            WHERE pt.playlist_id = ?\n            ORDER BY pt.position\n            ",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "track",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "name": "name",
+        "ordinal": 1,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "track",
+            "name": "name"
+          }
+        }
+      },
+      {
+        "name": "artists",
+        "ordinal": 2,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "track",
+            "name": "artists"
+          }
+        }
+      },
+      {
+        "name": "album_id",
+        "ordinal": 3,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "track",
+            "name": "album_id"
+          }
+        }
+      },
+      {
+        "name": "album_name",
+        "ordinal": 4,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "track",
+            "name": "album_name"
+          }
+        }
+      },
+      {
+        "name": "album_images",
+        "ordinal": 5,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "track",
+            "name": "album_images"
+          }
+        }
+      },
+      {
+        "name": "duration_ms",
+        "ordinal": 6,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "track",
+            "name": "duration_ms"
+          }
+        }
+      },
+      {
+        "name": "explicit",
+        "ordinal": 7,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "track",
+            "name": "explicit"
+          }
+        }
+      },
+      {
+        "name": "playable",
+        "ordinal": 8,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "track",
+            "name": "playable"
+          }
+        }
+      },
+      {
+        "name": "track_number",
+        "ordinal": 9,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "track",
+            "name": "track_number"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "0fefcb635da096e959c7451fbd764a1d3d2853b635c0b29f1f6e0c7ae1c9f757"
+}

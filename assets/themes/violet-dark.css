@@ -1,0 +1,29 @@
+/* Violet, for a dark surface.
+
+   A card takes the colour of the page: this interface separates by space and by tone, and draws a
+   line only where two areas meet. */
+
+--zui-color-primary: oklch(0.72 0.11 295);
+--zui-color-primary-foreground: oklch(0.17 0.02 295);
+--zui-color-accent: oklch(0.28 0.025 300);
+--zui-color-accent-foreground: oklch(0.93 0.02 300);
+--zui-color-secondary: oklch(0.28 0.025 300);
+--zui-color-secondary-foreground: oklch(0.93 0.02 300);
+--zui-color-ring: oklch(0.62 0.10 295);
+
+--zui-color-background: oklch(0.17 0.012 300);
+--zui-color-card: oklch(0.17 0.012 300);
+--zui-color-popover: oklch(0.22 0.015 300);
+
+--zui-color-sidebar: oklch(0.15 0.012 300);
+--zui-color-sidebar-primary: oklch(0.72 0.11 295);
+--zui-color-sidebar-primary-foreground: oklch(0.17 0.02 295);
+--zui-color-sidebar-accent: oklch(0.28 0.025 300);
+--zui-color-sidebar-accent-foreground: oklch(0.93 0.02 300);
+--zui-color-sidebar-border: oklch(1 0 0 / 9%);
+--zui-color-sidebar-ring: oklch(0.62 0.10 295);
+
+--zui-color-border: oklch(1 0 0 / 9%);
+--zui-color-input: oklch(1 0 0 / 9%);
+--zui-color-muted: oklch(0.24 0.015 300);
+--zui-color-muted-foreground: oklch(0.69 0.015 300);
