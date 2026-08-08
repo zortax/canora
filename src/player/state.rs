@@ -167,6 +167,9 @@ impl PlaybackStore {
             PlaybackEvent::ShuffleChanged(on) => self.shuffle.set(on),
             PlaybackEvent::RepeatChanged(repeat) => self.repeat.set(repeat),
             PlaybackEvent::QueueChanged { upcoming } => self.upcoming.set(upcoming),
+            // The header shows the state of the connection. That state belongs to the account,
+            // and the code at the event channel writes it.
+            PlaybackEvent::Connection(_) => {}
         }
     }
 }

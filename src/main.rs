@@ -8,6 +8,7 @@ mod images;
 mod models;
 mod mpris;
 mod player;
+mod session;
 mod services;
 mod ui;
 
@@ -186,7 +187,7 @@ async fn rootlist() -> anyhow::Result<()> {
         .await
         .context("cannot connect")?;
 
-    for entry in crate::api::direct::tree(&login.session).await {
+    for entry in crate::api::direct::tree(&login.session.get()).await {
         match entry {
             crate::api::direct::Entry::Playlist(id) => tracing::info!(playlist = %id.0),
             crate::api::direct::Entry::Folder {
@@ -210,7 +211,7 @@ async fn listing(id: &str) -> anyhow::Result<()> {
         .context("cannot connect")?;
 
     let id = crate::models::PlaylistId(id.to_owned());
-    match crate::api::direct::listing(&login.session, &id).await {
+    match crate::api::direct::listing(&login.session.get(), &id).await {
         Some(listing) => {
             tracing::info!(
                 name = %listing.name,
@@ -264,6 +265,7 @@ async fn spclient(path: &str) -> anyhow::Result<()> {
 
     match login
         .session
+        .get()
         .spclient()
         .request(&http::Method::GET, path, None, None)
         .await
@@ -287,7 +289,8 @@ async fn station(id: &str) -> anyhow::Result<()> {
         .context("cannot connect")?;
     let uri = SpotifyUri::from_uri(&format!("spotify:track:{id}"))
         .map_err(|error| anyhow::anyhow!("{error}"))?;
-    let client = login.session.spclient();
+    let session = login.session.get();
+    let client = session.spclient();
 
     match client.get_radio_for_track(&uri).await {
         Ok(bytes) => tracing::info!(
@@ -331,7 +334,7 @@ async fn check() -> anyhow::Result<()> {
     let login = crate::auth::connect(cache, |phase| tracing::info!(?phase))
         .await
         .context("cannot connect")?;
-    tracing::info!(username = %login.session.username(), "connected");
+    tracing::info!(username = %login.session.get().username(), "connected");
 
     let api = crate::api::ApiClient::new(&login).await;
     let me = api.me().await.context("cannot read the account")?;

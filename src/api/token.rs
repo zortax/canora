@@ -11,12 +11,12 @@
 
 use std::time::{Duration, Instant, SystemTime};
 
-use librespot_core::session::Session;
 use librespot_oauth::OAuthToken;
 use tokio::sync::Mutex;
 
 use crate::api::ApiError;
 use crate::auth::ClientId;
+use crate::session::SessionCell;
 
 /// How long before expiry a token is replaced.
 ///
@@ -34,7 +34,7 @@ pub enum TokenSource {
         refresh_token: String,
     },
     /// The streaming session.
-    Session(Session),
+    Session(SessionCell),
 }
 
 /// Holds the Web API token and replaces it when it runs out.
@@ -111,7 +111,7 @@ impl TokenManager {
                 }
             }
             TokenSource::Session(session) => {
-                let token = session.login5().auth_token().await?;
+                let token = session.get().login5().auth_token().await?;
                 Held {
                     value: token.access_token,
                     expires_at: token.timestamp + token.expires_in,

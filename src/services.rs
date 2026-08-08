@@ -46,7 +46,7 @@ pub struct Services {
     /// The library, as it was last read.
     pub cache: Arc<Cache>,
     /// The streaming session, for what the Web API does not carry.
-    pub session: librespot_core::session::Session,
+    pub session: crate::session::SessionCell,
     /// What a login needs, for connecting behind the window.
     pub standby: Arc<crate::auth::Standby>,
 }
@@ -58,22 +58,43 @@ impl Services {
     /// the cached library stays on the screen and the header says the account is out of reach.
     pub async fn link(
         &self,
-        phase: impl FnMut(crate::auth::AuthPhase),
+        mut phase: impl FnMut(crate::auth::AuthPhase),
     ) -> Result<UserProfile, StartError> {
-        let token = crate::auth::link(&self.standby, phase).await?;
-        if let Some(token) = &token {
-            // A browser login mints a Web API token directly. Use it rather than spending the
-            // refresh token on a second one.
-            self.api.prime(token).await;
+        // librespot connects a session one time, so a session that died needs a replacement. The
+        // button in the header therefore does the work that the watchdog does.
+        if self.standby.is_dead() {
+            phase(crate::auth::AuthPhase::Connecting);
+            self.reconnect().await?;
+            phase(crate::auth::AuthPhase::Ready);
+        } else {
+            let token = crate::auth::link(&self.standby, phase).await?;
+            if let Some(token) = &token {
+                // A browser login mints a Web API token directly. Use it rather than spending the
+                // refresh token on a second one.
+                self.api.prime(token).await;
+            }
         }
         let me = self.api.me().await?.clone();
         self.cache.put_profile(&me).await;
         Ok(me)
     }
 
+    /// Puts a fresh session in the place of one that died, and hands it to the player.
+    ///
+    /// All the code that reads the session reads it through the cell, so the Web API and the
+    /// playlists Spotify makes need no more work. librespot keeps a private copy of the session in
+    /// the audio pipeline, so the player gets the new session in a command.
+    pub async fn reconnect(&self) -> Result<(), StartError> {
+        let Some(session) = crate::auth::relink(&self.standby).await? else {
+            return Ok(());
+        };
+        self.player.session_replaced(session);
+        Ok(())
+    }
+
     /// How the account arranges its playlists.
     pub async fn rootlist(&self) -> Vec<crate::api::direct::Entry> {
-        crate::api::direct::tree(&self.session).await
+        crate::api::direct::tree(&self.session.get()).await
     }
 }
 
@@ -108,6 +129,8 @@ pub async fn start(
     // The engine reports once, and both readers hear it: the interface draws it, and the desktop
     // shows it. The desktop's copy is set up after the player, because it takes the handle.
     let (mpris_tx, mpris_rx) = tokio::sync::mpsc::unbounded_channel();
+    // The watchdog reports an outage on the same channel, so it keeps a sender of its own.
+    let outages = events.clone();
     let player = crate::player::spawn(standby.session.clone(), credentials, &runtime, move |event| {
         // A closed channel means the window is gone. The engine stops with it.
         let _ = mpris_tx.send(event.clone());
@@ -129,7 +152,7 @@ pub async fn start(
     // The client reads tracks from here before it asks Spotify for them.
     api.with_cache(cache.clone());
 
-    Ok(Services {
+    let services = Services {
         api,
         radio,
         player,
@@ -137,5 +160,10 @@ pub async fn start(
         cache,
         session: standby.session.clone(),
         standby,
-    })
+    };
+
+    // A connection that dies stops the audio pipeline and reports nothing. Watch the connection.
+    crate::session::supervise(&runtime, services.clone(), outages);
+
+    Ok(services)
 }

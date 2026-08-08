@@ -112,7 +112,7 @@ pub struct ApiClient {
     http: Http,
     me: OnceLock<UserProfile>,
     /// The streaming session, for the playlists the Web API refuses.
-    session: librespot_core::session::Session,
+    session: crate::session::SessionCell,
     /// The local copy of the library, when there is one.
     ///
     /// A track read here is kept, and the next list that carries it needs no request. The cache
@@ -250,7 +250,7 @@ impl ApiClient {
     ///
     /// Returns nothing when the session will not serve it either.
     pub async fn made_playlist(&self, id: &PlaylistId) -> Option<Playlist> {
-        let listing = direct::listing(&self.session, id).await?;
+        let listing = direct::listing(&self.session.get(), id).await?;
         Some(Playlist {
             id: Some(id.clone()),
             name: listing.name,
@@ -300,7 +300,7 @@ impl ApiClient {
         id: &PlaylistId,
         offset: u32,
     ) -> Result<Page<Track>, ApiError> {
-        let listing = direct::listing(&self.session, id)
+        let listing = direct::listing(&self.session.get(), id)
             .await
             .ok_or(ApiError::NotFound)?;
         let total = u32::try_from(listing.tracks.len()).unwrap_or(u32::MAX);

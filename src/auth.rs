@@ -23,6 +23,8 @@ use librespot_core::{Error as SpotifyError, authentication::Credentials};
 use librespot_oauth::{OAuthClient, OAuthClientBuilder, OAuthError, OAuthToken};
 use serde::{Deserialize, Serialize};
 
+use crate::session::SessionCell;
+
 /// Where the browser sends the code back to.
 ///
 /// Spotify checks this address against the client identifier on every request. Register this exact
@@ -78,12 +80,12 @@ pub enum AuthError {
     /// The thread that ran the browser flow ended early.
     #[error("login task ended: {0}")]
     Join(#[from] tokio::task::JoinError),
-    /// The session was dropped and cannot be built again in place.
+    /// The session died, and the disk holds nothing to build another one with.
     ///
-    /// librespot connects a session once. Everything below the interface holds that one session —
-    /// the player's engine, the client that reads the playlists Spotify makes — so a session that
-    /// died is a restart rather than a retry.
-    #[error("the connection to Spotify was lost; start canora again")]
+    /// librespot connects a session one time, so the application replaces a session that died —
+    /// see [`relink`]. The replacement is a login with the credentials that librespot wrote. A
+    /// login that wrote none of them leaves the browser as the only way back.
+    #[error("the connection to Spotify was lost; sign in again")]
     Stale,
 }
 
@@ -170,7 +172,10 @@ struct StoredRefresh {
 /// audio.
 pub struct Standby {
     /// The session, built and not connected.
-    pub session: Session,
+    ///
+    /// A cell holds it. The application replaces a session that dies, and all the code that reads
+    /// the session must see the replacement.
+    pub session: SessionCell,
     /// Which identifier this build uses.
     pub client_id: ClientId,
     /// The refresh token from a previous run, when there is one.
@@ -183,6 +188,16 @@ pub struct Standby {
     /// a single time, and a second `connect` fails with *Session is not connected*, which says the
     /// opposite of what happened. So the second attempt has to be the one that does not happen.
     linked: std::sync::atomic::AtomicBool,
+    /// Held while the application builds a replacement session.
+    ///
+    /// The watchdog and the button in the header both ask for one. Two replacements make two
+    /// connections to Spotify, and the connection that nothing points at stays open.
+    replacing: tokio::sync::Mutex<()>,
+    /// What the session's own tasks run on.
+    ///
+    /// The application can replace a session from any thread, and librespot builds one only inside
+    /// a runtime. This handle gives the runtime to the caller.
+    runtime: tokio::runtime::Handle,
 }
 
 impl Standby {
@@ -195,6 +210,14 @@ impl Standby {
             web_token: None,
             refresh_token: self.refresh_token.clone(),
         }
+    }
+
+    /// Whether the session connected one time and has since died.
+    ///
+    /// A session that never connected is still good. The first login owns that one.
+    #[must_use]
+    pub fn is_dead(&self) -> bool {
+        self.linked.load(std::sync::atomic::Ordering::Relaxed) && self.session.is_invalid()
     }
 }
 
@@ -213,12 +236,53 @@ pub fn standby(credentials: Cache) -> Standby {
     );
     let refresh_token = load_refresh(&client_id);
     Standby {
-        session: Session::new(SessionConfig::default(), Some(credentials.clone())),
+        session: SessionCell::new(Session::new(
+            SessionConfig::default(),
+            Some(credentials.clone()),
+        )),
         client_id,
         refresh_token,
         credentials,
         linked: std::sync::atomic::AtomicBool::new(false),
+        replacing: tokio::sync::Mutex::new(()),
+        runtime: tokio::runtime::Handle::current(),
     }
+}
+
+/// Builds a session in the place of one that died, and connects it.
+///
+/// librespot cannot connect a session again. The connection lives in a cell that librespot sets
+/// one time, and the invalid mark stays for the life of the session. The recovery is therefore a
+/// new session. It connects with the credentials on the disk, so it needs no browser: librespot
+/// wrote reusable credentials there at the first connection.
+///
+/// Returns nothing when the session is already well. A second caller finds that state after the
+/// first caller does the work.
+pub async fn relink(standby: &Standby) -> Result<Option<Session>, AuthError> {
+    let _building = standby.replacing.lock().await;
+    if !standby.session.is_invalid() {
+        return Ok(None);
+    }
+
+    let Some(stored) = standby.credentials.credentials() else {
+        // Only a login that wrote no credentials arrives here, and that login needs a browser.
+        return Err(AuthError::Stale);
+    };
+
+    // librespot builds a session inside a runtime, and it spawns tasks while it connects. Do
+    // both on the runtime, whatever thread the caller runs on.
+    let credentials = standby.credentials.clone();
+    let session = standby
+        .runtime
+        .spawn(async move {
+            let session = Session::new(SessionConfig::default(), Some(credentials));
+            session.connect(stored, true).await.map(|()| session)
+        })
+        .await??;
+
+    standby.session.set(session.clone());
+    tracing::info!(username = %session.username(), "the streaming session was replaced");
+    Ok(Some(session))
 }
 
 /// Connects the session in `standby`.
@@ -253,7 +317,7 @@ where
         && let Some(stored) = standby.credentials.credentials()
     {
         phase(AuthPhase::Connecting);
-        match standby.session.connect(stored, true).await {
+        match standby.session.get().connect(stored, true).await {
             Ok(()) => {
                 standby.linked.store(true, Ordering::Relaxed);
                 phase(AuthPhase::Ready);
@@ -273,6 +337,7 @@ where
     // Store the credentials while connecting. Every later run reads them back.
     standby
         .session
+        .get()
         .connect(Credentials::with_access_token(&token.access_token), true)
         .await?;
     standby.linked.store(true, Ordering::Relaxed);
@@ -283,7 +348,7 @@ where
 /// What a completed login hands to the rest of the application.
 pub struct Login {
     /// The session that streams audio.
-    pub session: Session,
+    pub session: SessionCell,
     /// Which identifier was used.
     pub client_id: ClientId,
     /// The Web API token from the browser login, when there is one.
@@ -439,18 +504,56 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn a_session_that_died_is_a_restart() {
+    async fn a_session_that_died_is_replaced_rather_than_connected_again() {
         let directory = std::env::temp_dir().join("canora-auth-test-stale");
         let standby = standby_in(&directory);
         standby
             .linked
             .store(true, std::sync::atomic::Ordering::Relaxed);
-        standby.session.shutdown();
+        standby.session.get().shutdown();
+
+        assert!(standby.is_dead(), "a connected session that shut down is dead");
 
         let failure = link(&standby, |_| {}).await;
         assert!(
             matches!(failure, Err(AuthError::Stale)),
             "a dropped session cannot be connected again in place: {failure:?}"
         );
+    }
+
+    #[tokio::test]
+    async fn a_session_that_never_connected_is_not_dead() {
+        // The watchdog reads this. A window on the welcome screen holds a session that did no
+        // work yet, and a replacement for that session races the login.
+        let directory = std::env::temp_dir().join("canora-auth-test-fresh");
+        let standby = standby_in(&directory);
+
+        assert!(!standby.is_dead());
+        standby.session.get().shutdown();
+        assert!(!standby.is_dead(), "nothing was connected, so nothing died");
+    }
+
+    #[tokio::test]
+    async fn a_replacement_needs_credentials_on_disk() {
+        let directory = std::env::temp_dir().join("canora-auth-test-relink");
+        let _ = std::fs::remove_dir_all(&directory);
+        let standby = standby_in(&directory);
+        standby.session.get().shutdown();
+
+        assert!(
+            matches!(relink(&standby).await, Err(AuthError::Stale)),
+            "there is nothing to connect a new session with"
+        );
+    }
+
+    #[tokio::test]
+    async fn a_healthy_session_is_left_alone() {
+        let directory = std::env::temp_dir().join("canora-auth-test-healthy");
+        let standby = standby_in(&directory);
+
+        let replaced = relink(&standby)
+            .await
+            .expect("a session that is not invalid needs no replacement");
+        assert!(replaced.is_none(), "no second connection was made");
     }
 }

@@ -10,7 +10,8 @@ pub mod queue;
 pub mod state;
 
 use librespot_core::cache::Cache;
-use librespot_core::session::Session;
+
+use crate::session::SessionCell;
 
 pub use crate::player::commands::{PlayerCommand, PlayerHandle};
 pub use crate::player::events::PlaybackEvent;
@@ -35,16 +36,16 @@ pub enum PlayerError {
 /// `report` runs on the engine's task for every event. Keep it short: hand the event to the
 /// interface thread and return.
 pub fn spawn(
-    session: Session,
+    session: SessionCell,
     cache: Cache,
     runtime: &tokio::runtime::Handle,
     report: impl FnMut(PlaybackEvent) + Send + 'static,
 ) -> Result<PlayerHandle, PlayerError> {
-    let (player, mixer, events) = engine::build(session, cache.clone())?;
+    let (player, mixer, events) = engine::build(session.get(), cache.clone())?;
     let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
 
     runtime.spawn(async move {
-        engine::Engine::new(player, mixer, cache, report)
+        engine::Engine::new(player, mixer, cache, session, report)
             .run(rx, events)
             .await;
     });

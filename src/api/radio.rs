@@ -9,22 +9,21 @@
 //!
 //! Try the first. Fall back to the second.
 
-use librespot_core::session::Session;
-
 use crate::api::{ApiClient, ApiError};
 use crate::models::{Track, TrackId};
+use crate::session::SessionCell;
 
 /// How many tracks a radio queue holds.
 const WANTED: usize = 50;
 
 /// Reads a radio queue for one track.
 pub struct Radio {
-    session: Session,
+    session: SessionCell,
 }
 
 impl Radio {
     /// Asks over this session when the Web API refuses.
-    pub fn new(session: Session) -> Self {
+    pub fn new(session: SessionCell) -> Self {
         Self { session }
     }
 
@@ -77,6 +76,7 @@ impl Radio {
     async fn station_ids(&self, seed: &TrackId) -> Result<Vec<TrackId>, ApiError> {
         let bytes = self
             .session
+            .get()
             .spclient()
             .get_apollo_station("stations", &seed.uri(), Some(WANTED), Vec::new(), true)
             .await

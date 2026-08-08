@@ -98,6 +98,8 @@ impl Snapshot {
                 self.has_next = !upcoming.is_empty();
                 vec![Property::CanGoNext(self.has_next)]
             }
+            // The desktop reads the state of the connection from the playback status.
+            PlaybackEvent::Connection(_) => Vec::new(),
         }
     }
 

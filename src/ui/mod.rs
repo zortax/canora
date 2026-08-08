@@ -162,6 +162,18 @@ pub fn App(
     if let Some(mut events) = events.borrow_mut().take() {
         spawn_local(async move {
             while let Some(event) = events.recv().await {
+                // The header answers an outage. It shows the mark that a failed login also
+                // shows, and a press on that mark asks for the connection at once.
+                if let crate::player::PlaybackEvent::Connection(connection) = event {
+                    state.link.set(match connection {
+                        crate::player::events::Connection::Lost => {
+                            crate::ui::state::Link::Broken("The connection to Spotify went".into())
+                        }
+                        crate::player::events::Connection::Restored => {
+                            crate::ui::state::Link::Live
+                        }
+                    });
+                }
                 playback.apply(event);
             }
         });

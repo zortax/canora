@@ -2,6 +2,8 @@
 
 use std::time::Duration;
 
+use librespot_core::session::Session;
+
 use crate::models::Track;
 use crate::player::queue::{PlayContext, RepeatMode};
 
@@ -33,8 +35,22 @@ pub enum PlayerCommand {
     SetRepeat(RepeatMode),
     /// Puts a track next.
     PlayNext(Track),
+    /// A session in the place of one that died.
+    SessionReplaced(Replacement),
     /// Stops the engine.
     Shutdown,
+}
+
+/// A session on its way to the pipeline.
+///
+/// librespot's session carries no `Debug`. Every other instruction here prints in a log, so this
+/// type wraps the session and gives it a name.
+pub struct Replacement(pub Session);
+
+impl std::fmt::Debug for Replacement {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("a fresh session")
+    }
 }
 
 /// Sends instructions to the player.
@@ -107,5 +123,12 @@ impl PlayerHandle {
     /// Puts a track next.
     pub fn play_next(&self, track: Track) {
         self.send(PlayerCommand::PlayNext(track));
+    }
+
+    /// Hands the pipeline a session in the place of the one that died.
+    ///
+    /// The engine starts the track again at the position where the connection stopped.
+    pub fn session_replaced(&self, session: Session) {
+        self.send(PlayerCommand::SessionReplaced(Replacement(session)));
     }
 }
