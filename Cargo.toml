@@ -53,6 +53,13 @@ sqlx = { version = "0.9", default-features = false, features = [
 rand = "0.10"
 mpris-server = "0.10"
 
+[build-dependencies]
+# Not used here. librespot-core's build script feeds `vergen::Build` to an emitter from
+# vergen-gitcl, and vergen 9.1 moved to the vergen-lib 9.x line while vergen-gitcl 1.0 still
+# uses vergen-lib 0.1. The two `Add` traits then differ and librespot-core fails to build.
+# Pinning here holds the resolver at the last working version across `cargo update`.
+vergen = "=9.0.6"
+
 [profile.dev]
 # The framework and the audio pipeline are both slow when unoptimised. Build the dependencies
 # with optimisation and keep the application itself quick to rebuild.
