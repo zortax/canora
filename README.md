@@ -13,6 +13,26 @@ Spotify Premium is necessary.
 cargo run
 ```
 
+### Platforms
+
+Linux, macOS and Windows. `Cargo.toml` picks the audio backend per target.
+
+* **Linux** plays through PulseAudio, which is what PipeWire answers to. The build needs the
+  PulseAudio headers: `libpulse-dev` on Debian and Ubuntu, `libpulse-devel` on Fedora, `libpulse`
+  on Arch.
+* **macOS** and **Windows** play through rodio, which reaches CoreAudio and WASAPI. Both ship with
+  the system.
+
+Canora tells the shell what is playing on Linux (MPRIS) and macOS (Now Playing) on macOS.
+
+macOS shows Now Playing only for a bundled application, so build one to see the panel:
+
+```sh
+cargo install cargo-bundle
+cargo bundle --release --format osx
+open target/release/bundle/osx/canora.app
+```
+
 ### The client identifier
 
 Put a Spotify client identifier in `.env` beside `Cargo.toml`:
@@ -78,7 +98,8 @@ cargo sqlx prepare -- --all-targets
 * A welcome screen on a first run, with one button, and a page in the browser that says how the
   login went and closes itself. Every run after that opens straight onto the cached library and
   connects behind it; an account out of reach is a mark in the header rather than a wait.
-* MPRIS, so the desktop shows what is playing and the keys on a keyboard work.
+* The desktop's own player: MPRIS on Linux and Now Playing on macOS, so the shell shows the track
+  and the keys on a keyboard work.
 
 ## Diagnostics
 

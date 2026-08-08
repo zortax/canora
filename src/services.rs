@@ -128,15 +128,15 @@ pub async fn start(
 
     // The engine reports once, and both readers hear it: the interface draws it, and the desktop
     // shows it. The desktop's copy is set up after the player, because it takes the handle.
-    let (mpris_tx, mpris_rx) = tokio::sync::mpsc::unbounded_channel();
+    let (desktop_tx, desktop_rx) = tokio::sync::mpsc::unbounded_channel();
     // The watchdog reports an outage on the same channel, so it keeps a sender of its own.
     let outages = events.clone();
     let player = crate::player::spawn(standby.session.clone(), credentials, &runtime, move |event| {
         // A closed channel means the window is gone. The engine stops with it.
-        let _ = mpris_tx.send(event.clone());
+        let _ = desktop_tx.send(event.clone());
         let _ = events.send(event);
     })?;
-    crate::mpris::relay(&runtime, player.clone(), mpris_rx);
+    crate::desktop::relay(&runtime, player.clone(), desktop_rx);
 
     // A picture that never arrives must not hold the ask open: every later reader of that address
     // waits on the same fetch, so one stalled connection is one cover that never appears again.
