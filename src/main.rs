@@ -91,8 +91,9 @@ fn main() -> anyhow::Result<()> {
         .with_title("canora")
         .with_size(1100.0, 720.0)
         .with_min_size(720.0, 480.0)
-        // The window draws its own frame; the strip across the top is the handle.
-        .with_decorations(false)
+        // The strip across the top is the handle. macOS keeps its frame around it; the other
+        // desktops hand the whole frame over, and `src/ui/shell.rs` draws what they dropped.
+        .with_decorations(zgui::prelude::Decorations::NoTitleBar)
         .with_stylesheet(crate::ui::style::SHEET)
         .run(move || {
             view! { Root(runtime = runtime.clone()) }

@@ -73,6 +73,9 @@
         padding: var(--zui-space-sm);
         gap: var(--zui-space-md);
     }
+    /* Where the desktop draws its own window buttons, they stand in this corner and the panel
+       carries no name of its own. The content clears the buttons and sits close under them. */
+    .side--buttons { padding-top: 34px; }
     /* As tall as the strip across the top, so the two halves of the window's handle line up. */
     .side__brand {
         align-items: center;

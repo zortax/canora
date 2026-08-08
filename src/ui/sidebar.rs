@@ -14,7 +14,33 @@ use crate::ui::art::ArtProps;
 use crate::ui::format;
 use crate::ui::icons::{IconProps, IconSize, art};
 use crate::ui::router::{Router, Route};
+use crate::ui::shell::PLATFORM_FRAME;
 use crate::ui::state::ui;
+
+/// The class the panel carries.
+///
+/// A desktop that draws its own window buttons puts them over the panel's top left corner, so the
+/// panel leaves the corner to them and starts under them.
+const PANEL: &str = if PLATFORM_FRAME { "side side--buttons" } else { "side" };
+
+/// The name and the mark at the top of the panel.
+///
+/// Empty where the desktop's own window buttons stand in that corner. The strip is still the
+/// window's handle there: macOS drags a window by its title bar, which is what the buttons sit in.
+fn brand(window: &WindowHandle) -> AnyView {
+    if PLATFORM_FRAME {
+        return ().any();
+    }
+    view! {
+        row(class = "side__brand", on:pointer_down = window.move_drag_handler()) {
+            box(class = "side__logo") {
+                Icon(svg = art::WAVE, size = IconSize::Sm)
+            }
+            text(class = "side__name") {"canora"}
+        }
+    }
+    .any()
+}
 
 /// The panel on the left.
 #[component]
@@ -37,15 +63,13 @@ pub fn Sidebar() -> impl IntoView {
     let window = use_window();
 
     view! {
-        column(class = "side") {
+        column(class = PANEL) {
             // The panel's own header is part of the window's handle: the strip across the top of
             // the main area is the rest of it, and the two together are the whole width.
-            row(class = "side__brand", on:pointer_down = window.move_drag_handler()) {
-                box(class = "side__logo") {
-                    Icon(svg = art::WAVE, size = IconSize::Sm)
-                }
-                text(class = "side__name") {"canora"}
-            }
+            //
+            // The desktop's own window buttons stand where this does, so the two swap places: a
+            // desktop that draws them keeps the corner, and the panel starts below.
+            {brand(&window)}
 
             column(class = "side__group") {
                 text(class = "side__label") {"Library"}

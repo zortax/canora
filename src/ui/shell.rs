@@ -1,6 +1,6 @@
 //! How the window is laid out: the panel, the main area, and the bar that floats over both.
 //!
-//! The window draws its own frame. The strip across the top is both the header and the handle the
+//! The window carries no title bar. The strip across the top is both the header and the handle the
 //! desktop moves the window by, so it looks like part of the page and behaves like a title bar.
 
 use zgui::prelude::*;
@@ -22,6 +22,13 @@ use crate::ui::views::liked::LikedProps;
 use crate::ui::views::playlist::PlaylistViewProps;
 use crate::ui::views::radio::RadioViewProps;
 use crate::ui::views::search::SearchViewProps;
+
+/// Whether the desktop draws the frame around the window.
+///
+/// macOS keeps its frame for a window that asked for no title bar, so the window buttons, the
+/// corners, the shadow and the resize edges all belong to the system. The other desktops hand the
+/// whole frame over, and canora draws them itself.
+pub const PLATFORM_FRAME: bool = cfg!(target_os = "macos");
 
 /// The window.
 #[component]
@@ -75,6 +82,18 @@ pub fn Shell(
             PlayerBar()
             ResizeEdges()
         }
+    }
+}
+
+/// Draws `view` where the desktop leaves it to the window.
+///
+/// The window buttons and the resize edges are the desktop's own wherever it keeps its frame, and
+/// a second set drawn over them would be two of everything.
+fn own_frame(view: impl IntoView + 'static) -> AnyView {
+    if PLATFORM_FRAME {
+        ().any()
+    } else {
+        view.any()
     }
 }
 
@@ -301,12 +320,14 @@ fn AccountMenu() -> impl IntoView {
 }
 
 /// Minimise, maximise and close.
+///
+/// Absent where the desktop draws its own, which on macOS is the three buttons at the top left.
 #[component]
 pub fn WindowControls() -> impl IntoView {
     let window = use_window();
     let maximised = window.maximized();
 
-    view! {
+    own_frame(view! {
         row(class = "wctl") {
             control(
                 class = "wctl__key",
@@ -351,10 +372,12 @@ pub fn WindowControls() -> impl IntoView {
                 Icon(svg = art::WINDOW_CLOSE, size = IconSize::Xs)
             }
         }
-    }
+    })
 }
 
 /// The strips along the window's edges that resize it.
+///
+/// Absent where the desktop keeps its frame, which carries edges of its own.
 #[component]
 pub fn ResizeEdges() -> impl IntoView {
     let window = use_window();
@@ -376,7 +399,7 @@ pub fn ResizeEdges() -> impl IntoView {
     })
     .collect::<Vec<_>>();
 
-    view! { box(class = "edges") {{edges}} }
+    own_frame(view! { box(class = "edges") {{edges}} })
 }
 
 /// What the main area shows.
