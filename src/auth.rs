@@ -1,18 +1,30 @@
 //! How the application gets a Spotify session and a Web API token.
 //!
-//! There are two logins behind one browser visit.
+//! There are two logins, and each one needs its own browser visit.
 //!
-//! * The **session** streams audio. librespot writes reusable credentials to the cache while it
-//!   connects, so every run after the first connects from disk.
+//! * The **session** streams audio and serves what the Web API refuses. librespot writes reusable
+//!   credentials to the cache while it connects, so every run after the first connects from disk.
 //! * The **Web API** reads and edits the library. It needs a token of its own.
 //!
-//! Which client identifier is used decides where the Web API token comes from.
+//! The two cannot share one visit, because each half insists on a different client identifier.
 //!
-//! * With an identifier of this person's own, the browser login mints the Web API token directly
-//!   and a refresh token keeps it alive. This is the supported path.
-//! * With no identifier, the login falls back to Spotify's own desktop identifier. Audio plays,
-//!   but the Web API answers `429` to almost every request: that identifier is shared by every
-//!   librespot program in the world and its quota is spent. Set an identifier to read a library.
+//! * The session's reusable credential is only worth anything if **Spotify's own** desktop
+//!   identifier minted it. Every request the session makes ends at `login5`, which upgrades that
+//!   credential into an access token, and `login5` refuses a credential that a registered
+//!   application minted: `INVALID_CREDENTIALS` when it is presented under Spotify's identifier,
+//!   and `BAD_REQUEST` under the application's own, which `login5` does not accept at all. The
+//!   access point is not so strict, so a session built the wrong way authenticates and then fails
+//!   every request it makes — see [`SESSION_CLIENT_ID`].
+//! * The Web API wants the opposite. Spotify's identifier is shared by every librespot program in
+//!   the world and its quota is spent, so it answers `429` to almost every request. Only an
+//!   identifier this person registered reads a library.
+//!
+//! So the first run opens the browser twice: once for the library, once for playback. Both are
+//! kept afterwards — a refresh token for the Web API, reusable credentials for the session — and
+//! no later run opens a browser at all.
+//!
+//! With no registered identifier there is nothing to ask for the library with, so that build opens
+//! the browser once and takes its Web API token from the session, rate limit and all.
 
 use std::path::PathBuf;
 
@@ -50,8 +62,26 @@ const COMPILED_CLIENT_ID: &str = env!("CANORA_CLIENT_ID");
 /// The environment variable that overrides the compiled identifier.
 pub const CLIENT_ID_VAR: &str = "SPOTIFY_CLIENT_ID";
 
+/// The identifier that mints the session's reusable credentials.
+///
+/// This is Spotify's own desktop identifier, which is what [`ClientId::Shared`] carries. It has to
+/// be this one: `login5` upgrades the session's stored credential on every request the session
+/// makes, and it only accepts a credential one of Spotify's own identifiers minted. A registered
+/// application's identifier is refused outright.
+///
+/// librespot already sends this identifier for the session's own requests — `SessionConfig` is
+/// left at its default, so `login5` and the client token both carry it. This names the one place
+/// the application has a say in: which identifier the browser mints the credential under.
+const SESSION_CLIENT_ID: ClientId = ClientId::Shared;
+
+/// What the session login asks permission for.
+///
+/// Streaming is the whole of it. Everything else the session serves it serves on the strength of
+/// the account, not a scope.
+const SESSION_SCOPES: &[&str] = &["streaming"];
+
 /// What the application asks permission for.
-const SCOPES: &[&str] = &[
+pub const SCOPES: &[&str] = &[
     "streaming",
     "user-read-email",
     "user-read-private",
@@ -97,8 +127,13 @@ pub enum AuthPhase {
     /// Looking for credentials on disk.
     #[default]
     CheckingCache,
-    /// Waiting for the person to finish in the browser.
+    /// Waiting for the person to finish the library login in the browser.
     WaitingForBrowser,
+    /// Waiting for the person to finish the playback login in the browser.
+    ///
+    /// The second visit of a first run. It is a separate phase because the screen has to say why
+    /// the browser opened again, which a repeat of the first line would not.
+    WaitingForPlayback,
     /// Talking to Spotify.
     Connecting,
     /// Connected.
@@ -264,6 +299,12 @@ pub async fn relink(standby: &Standby) -> Result<Option<Session>, AuthError> {
         return Ok(None);
     }
 
+    // A replacement is only worth building from credentials `login5` will still upgrade. Ones
+    // minted the other way connect and then refuse every request, which would turn a dead session
+    // into a live one that does nothing.
+    if !session_credentials_usable(&standby.credentials) {
+        return Err(AuthError::Stale);
+    }
     let Some(stored) = standby.credentials.credentials() else {
         // Only a login that wrote no credentials arrives here, and that login needs a browser.
         return Err(AuthError::Stale);
@@ -287,8 +328,9 @@ pub async fn relink(standby: &Standby) -> Result<Option<Session>, AuthError> {
 
 /// Connects the session in `standby`.
 ///
-/// Uses the credentials on disk when there are any. Opens a browser when there are none, or when
-/// the ones on disk are refused. Returns the Web API token a browser login mints.
+/// Uses the credentials on disk when there are any. Opens a browser for each half that has nothing
+/// on disk, and for the session when the credentials on disk are refused. Returns the Web API
+/// token, when this run minted one; a run that read its refresh token off the disk mints none.
 pub async fn link<F>(standby: &Standby, mut phase: F) -> Result<Option<OAuthToken>, AuthError>
 where
     F: FnMut(AuthPhase),
@@ -308,12 +350,22 @@ where
         return Ok(None);
     }
 
-    // A session reconnects from disk. The Web API needs a browser only when its refresh token is
-    // absent, so both halves have to be in hand before the browser can be skipped.
-    let can_skip_browser = standby.credentials.credentials().is_some()
-        && (!client_id.reaches_web_api() || standby.refresh_token.is_some());
+    // The library half. Its refresh token outlives every run, so the browser opens for it only
+    // once. A build with no registered identifier has nothing to ask for and takes its token from
+    // the session instead.
+    let mut web_token = None;
+    if client_id.reaches_web_api() && standby.refresh_token.is_none() {
+        phase(AuthPhase::WaitingForBrowser);
+        let token = login_in_browser(client_id.clone(), SCOPES).await?;
+        if !token.refresh_token.is_empty() {
+            save_refresh(client_id, &token.refresh_token);
+        }
+        web_token = Some(token);
+    }
 
-    if can_skip_browser
+    // The playback half. The credentials on disk carry it whenever Spotify's own identifier minted
+    // them; anything else has to be minted again, however good it looks.
+    if session_credentials_usable(&standby.credentials)
         && let Some(stored) = standby.credentials.credentials()
     {
         phase(AuthPhase::Connecting);
@@ -321,28 +373,39 @@ where
             Ok(()) => {
                 standby.linked.store(true, Ordering::Relaxed);
                 phase(AuthPhase::Ready);
-                return Ok(None);
+                return Ok(web_token);
             }
             Err(error) => tracing::warn!(%error, "stored credentials refused, opening a browser"),
         }
     }
 
-    phase(AuthPhase::WaitingForBrowser);
-    let token = login_in_browser(client_id.clone()).await?;
-    if client_id.reaches_web_api() && !token.refresh_token.is_empty() {
-        save_refresh(client_id, &token.refresh_token);
-    }
+    phase(AuthPhase::WaitingForPlayback);
+    // Streaming is all the session needs. A build with no registered identifier reads the library
+    // through this token as well, so that one has to ask for the library scopes too.
+    let session_scopes = if client_id.reaches_web_api() {
+        SESSION_SCOPES
+    } else {
+        SCOPES
+    };
+    let session_token = login_in_browser(SESSION_CLIENT_ID, session_scopes).await?;
 
     phase(AuthPhase::Connecting);
     // Store the credentials while connecting. Every later run reads them back.
     standby
         .session
         .get()
-        .connect(Credentials::with_access_token(&token.access_token), true)
+        .connect(
+            Credentials::with_access_token(&session_token.access_token),
+            true,
+        )
         .await?;
+    note_minted_by(&SESSION_CLIENT_ID);
     standby.linked.store(true, Ordering::Relaxed);
     phase(AuthPhase::Ready);
-    Ok(Some(token))
+
+    // A build with no registered identifier reads the library through the session, and the token
+    // that connected it is the one to start from.
+    Ok(web_token.or((!client_id.reaches_web_api()).then_some(session_token)))
 }
 
 /// What a completed login hands to the rest of the application.
@@ -375,6 +438,47 @@ fn refresh_path() -> Result<PathBuf, AuthError> {
     Ok(crate::config::config_dir()?.join("oauth.json"))
 }
 
+/// Where the identifier that minted the session's credentials is noted.
+///
+/// This sits beside the credentials it describes, inside the directory [`forget`] removes, so the
+/// note cannot outlive what it refers to.
+fn minted_by_path() -> Result<PathBuf, AuthError> {
+    Ok(crate::config::cache_dir()?.join("credentials").join("minted-by"))
+}
+
+/// Whether the credentials on disk are ones the session can still use.
+///
+/// A credential minted under any other identifier authenticates at the access point and is then
+/// refused by `login5` on the first request, which reads as a dead account rather than a wrong
+/// login. Reading the note is how that is caught before the browser is skipped.
+fn session_credentials_usable(cache: &Cache) -> bool {
+    if cache.credentials().is_none() {
+        return false;
+    }
+    let noted = minted_by_path()
+        .ok()
+        .and_then(|path| std::fs::read_to_string(path).ok());
+    minted_the_session_way(noted.as_deref())
+}
+
+/// Whether a note names the identifier the session's credentials have to come from.
+///
+/// No note means no: a build that kept none predates the split, so its credentials were minted
+/// under the registered identifier and `login5` will refuse them.
+fn minted_the_session_way(noted: Option<&str>) -> bool {
+    noted.is_some_and(|noted| noted.trim() == SESSION_CLIENT_ID.as_str())
+}
+
+/// Notes which identifier minted the credentials librespot has just written.
+fn note_minted_by(client_id: &ClientId) {
+    let result = minted_by_path().and_then(|path| {
+        std::fs::write(path, client_id.as_str()).map_err(|error| AuthError::Cache(error.into()))
+    });
+    if let Err(error) = result {
+        tracing::warn!(%error, "cannot note which identifier minted the credentials");
+    }
+}
+
 /// The refresh token on disk, if it belongs to `client_id`.
 fn load_refresh(client_id: &ClientId) -> Option<String> {
     let path = refresh_path().ok()?;
@@ -400,8 +504,8 @@ pub fn save_refresh(client_id: &ClientId, refresh_token: &str) {
 
 /// Forgets the login.
 ///
-/// Removes the credentials librespot kept and the refresh token beside them. The next start finds
-/// nothing and asks the browser again.
+/// Removes the credentials librespot kept, the note of what minted them, and the refresh token
+/// beside them. The next start finds nothing and asks the browser again — twice, once per half.
 pub fn forget() -> Result<(), AuthError> {
     let credentials = crate::config::cache_dir()?.join("credentials");
     match std::fs::remove_dir_all(&credentials) {
@@ -419,21 +523,25 @@ pub fn forget() -> Result<(), AuthError> {
 
 /// Whether a login is already on disk.
 ///
-/// Both halves have to be there. A session reconnects from the credentials librespot kept, and the
-/// Web API needs a refresh token beside them, so one without the other still means the browser.
+/// Both halves have to be there. A session reconnects from the credentials librespot kept — and
+/// only from ones Spotify's own identifier minted — while the Web API needs a refresh token beside
+/// them, so one without the other still means the browser.
 #[must_use]
 pub fn is_signed_in() -> bool {
     let client_id = ClientId::resolve();
     let Ok(cache) = open_cache() else {
         return false;
     };
-    cache.credentials().is_some()
+    session_credentials_usable(&cache)
         && (!client_id.reaches_web_api() || load_refresh(&client_id).is_some())
 }
 
 /// Builds the browser-login client for `client_id`.
-pub fn oauth_client(client_id: &ClientId) -> Result<OAuthClient, OAuthError> {
-    OAuthClientBuilder::new(&client_id.as_str(), REDIRECT_URI, SCOPES.to_vec())
+///
+/// Both halves come back to the same address. They run one after the other, so the listener the
+/// first one puts on that port is gone before the second one asks for it.
+pub fn oauth_client(client_id: &ClientId, scopes: &[&str]) -> Result<OAuthClient, OAuthError> {
+    OAuthClientBuilder::new(&client_id.as_str(), REDIRECT_URI, scopes.to_vec())
         .open_in_browser()
         .with_custom_message(DONE_PAGE)
         .build()
@@ -443,9 +551,12 @@ pub fn oauth_client(client_id: &ClientId) -> Result<OAuthClient, OAuthError> {
 ///
 /// The flow blocks a thread: it opens a browser and waits on a loopback socket for the redirect.
 /// Run it away from the runtime's worker threads.
-async fn login_in_browser(client_id: ClientId) -> Result<OAuthToken, AuthError> {
+async fn login_in_browser(
+    client_id: ClientId,
+    scopes: &'static [&'static str],
+) -> Result<OAuthToken, AuthError> {
     Ok(tokio::task::spawn_blocking(move || {
-        oauth_client(&client_id)?.get_access_token()
+        oauth_client(&client_id, scopes)?.get_access_token()
     })
     .await??)
 }
@@ -543,6 +654,29 @@ mod tests {
         assert!(
             matches!(relink(&standby).await, Err(AuthError::Stale)),
             "there is nothing to connect a new session with"
+        );
+    }
+
+    #[test]
+    fn credentials_from_before_the_split_are_not_reused() {
+        // The failure this catches is silent: a credential the registered identifier minted
+        // authenticates at the access point and is then refused by `login5` on every request, so
+        // the application looks signed in and serves nothing.
+        assert!(
+            !minted_the_session_way(None),
+            "a cache with no note predates the split"
+        );
+        assert!(
+            !minted_the_session_way(Some(COMPILED_CLIENT_ID)),
+            "the registered identifier cannot mint the session's credentials"
+        );
+        assert!(
+            minted_the_session_way(Some(&SESSION_CLIENT_ID.as_str())),
+            "Spotify's own identifier is the one that works"
+        );
+        assert!(
+            minted_the_session_way(Some(&format!("{}\n", SESSION_CLIENT_ID.as_str()))),
+            "a trailing newline is still the same identifier"
         );
     }
 

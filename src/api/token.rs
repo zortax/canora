@@ -98,7 +98,8 @@ impl TokenManager {
                 let refresh_token = refresh_token.clone();
                 // The exchange blocks a thread. Keep it off the runtime's workers.
                 let token = tokio::task::spawn_blocking(move || {
-                    crate::auth::oauth_client(&client_id)?.refresh_token(&refresh_token)
+                    crate::auth::oauth_client(&client_id, crate::auth::SCOPES)?
+                        .refresh_token(&refresh_token)
                 })
                 .await
                 .map_err(|error| ApiError::Auth(error.to_string()))?

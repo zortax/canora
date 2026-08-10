@@ -201,6 +201,7 @@ fn describe(phase: &AuthPhase) -> &'static str {
     match phase {
         AuthPhase::CheckingCache => "Looking for a login on this machine…",
         AuthPhase::WaitingForBrowser => "Finish in the browser, then come back.",
+        AuthPhase::WaitingForPlayback => "Once more in the browser, to allow playback.",
         AuthPhase::Connecting => "Connecting to Spotify…",
         AuthPhase::Ready => "Connected.",
         AuthPhase::Failed(_) => "That did not work.",
