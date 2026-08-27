@@ -59,13 +59,16 @@ pub fn Tracklist(
             label = "Tracks",
             class = "list",
             row = move |index: usize| {
-                let Some(track) = tracks.with(|tracks| tracks.get(index).cloned()) else {
-                    return ().any();
-                };
+                // The list itself, and nothing lifted out of it. A row is mounted every row-height
+                // of travel, and taking the track by value copied its name, its artists and its
+                // album's covers on every one of them — for a track the list handed to the same row
+                // already holds.
                 let all = tracks.get();
+                if index >= all.len() {
+                    return ().any();
+                }
                 view! {
                     TrackRow(
-                        track = track,
                         index = index,
                         all = all,
                         context = context.get(),
@@ -81,11 +84,9 @@ pub fn Tracklist(
 /// One track.
 #[component]
 pub fn TrackRow(
-    /// Which track.
-    track: Track,
     /// Where it sits in the list.
     index: usize,
-    /// The whole list. Playing one track plays the rest.
+    /// The whole list. This row is `all[index]`, and playing it plays the rest.
     all: Rc<Vec<Track>>,
     /// Where the list came from.
     context: PlayContext,
@@ -96,6 +97,13 @@ pub fn TrackRow(
     let app = ui();
     let state = app.state;
     let playback = app.playback;
+
+    // Borrowed for the length of this build. Everything below takes the one field it needs, so a
+    // mount copies a title and a line of artists rather than the whole record twice over.
+    let Some(track) = all.get(index) else {
+        return ().any();
+    };
+    let playable = track.playable;
 
     let id = track.id.clone();
     let playing = Signal::derive_local({
@@ -135,18 +143,16 @@ pub fn TrackRow(
         (index + 1).to_string()
     };
     let title = format::truncate(&track.name, format::TITLE).into_owned();
-    let artists = track.artists.clone();
     let artist_line = format::truncate(&track.artist_line(), format::ARTIST).into_owned();
     let length = format::duration(track.duration);
-    let images = track
-        .album
-        .as_ref()
-        .map(|album| album.images.clone())
-        .unwrap_or_default();
+    // The one identifier the link needs, rather than every artist the track has: a row shows the
+    // names as one line and offers a link only when there is no question which artist it means.
+    let lone_artist = (track.artists.len() == 1).then(|| track.artists[0].id.clone());
 
     let play: Rc<dyn Fn()> = {
         let app = app.clone();
         let context = context.clone();
+        let all = Rc::clone(&all);
         Rc::new(move || {
             app.services
                 .player
@@ -155,9 +161,8 @@ pub fn TrackRow(
     };
 
     // One artist is a link. Several are a line of text: which one a click meant would be a guess.
-    let artist_view = if artists.len() == 1 {
+    let artist_view = if let Some(id) = lone_artist {
         let router = app.router;
-        let id = artists[0].id.clone();
         let name = artist_line.clone();
         view! {
             control(
@@ -184,8 +189,16 @@ pub fn TrackRow(
         }
         .any()
     } else {
+        // Read here rather than above: an album row shows a number and never touches the covers,
+        // so lifting them out unconditionally copied a vector per mount for half the lists that
+        // exist.
+        let images = track
+            .album
+            .as_ref()
+            .map(|album| album.images.clone())
+            .unwrap_or_default();
         view! {
-            Art(images = Signal::stored_local(images.clone()), class = "art art-row", want = 64)
+            Art(images = Signal::stored_local(images), class = "art art-row", want = 64)
             box(class = "trk__mark trk__mark-over") {
                 box(class = "trk__sign") {
                     Icon(svg = art::PLAY, size = IconSize::Xs)
@@ -196,13 +209,17 @@ pub fn TrackRow(
     };
 
     let on_row = play.clone();
+    // The menu's copy is taken when the menu opens, not when the row mounts: the content is built
+    // behind a presence gate, and a right-click is rare next to a row that arrives every
+    // row-height of a scroll.
+    let menu_list = Rc::clone(&all);
     view! {
         ContextMenu {
             ContextMenuTrigger {
                 row(
                     class = "trk",
                     class:trk-on = move || playing.get(),
-                    class:trk-off = move || !track.playable,
+                    class:trk-off = move || !playable,
                     class:trk-liked = move || is_liked.get(),
                     tabindex = Focus::Sequential,
                     // Only the primary button plays. A right press opens the menu, and a track
@@ -235,13 +252,14 @@ pub fn TrackRow(
             }
             ContextMenuContent {
                 TrackMenu(
-                    track = track.clone(),
+                    track = menu_list[index].clone(),
                     context = context.clone(),
                     play = play.clone()
                 )
             }
         }
     }
+    .any()
 }
 
 /// What a track offers.
